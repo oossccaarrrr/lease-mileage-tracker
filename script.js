@@ -1,186 +1,191 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Lease Mileage Tracker</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;500&display=swap" rel="stylesheet" />
-  <style>
-    body {
-      font-family: 'Inter', sans-serif;
-      background: #f8fafc;
-      color: #334155;
-      margin: 0;
-      padding: 3rem 1rem;
-      display: flex;
-      justify-content: center;
-      align-items: flex-start;
-      min-height: 100vh;
+const form = document.getElementById("mileageForm");
+const penaltyDisplay = document.getElementById("penalty");
+const resetBtn = document.getElementById("resetBtn");
+const progressBar = document.getElementById("progressBar");
+const progressValue = document.getElementById("progressValue");
+const weekInput = document.getElementById("week");
+const dateInput = document.getElementById("date");
+const odometerInput = document.getElementById("odometer");
+
+const MAX_WEEKS = 156;
+const LEASE_LIMIT = 22500;
+const PENALTY_RATE = 0.20;
+
+const MIN_WEEKLY_MILES = 7500 / 156;
+const MAX_WEEKLY_MILES = 10000 / 156;
+
+let entries = JSON.parse(localStorage.getItem("leaseMiles")) || [];
+
+let mileageChart;
+
+function setDateForWeek(weekNum) {
+  const leaseStart = new Date(2025, 6, 29); // July is 6 (zero-indexed)
+  const msPerWeek = 7 * 24 * 60 * 60 * 1000;
+  const date = new Date(leaseStart.getTime() + (weekNum - 1) * msPerWeek);
+  dateInput.value = date.toISOString().slice(0, 10);
+}
+
+function resetInputs(clearAll = false) {
+  if (clearAll) {
+    weekInput.value = "";
+    dateInput.value = "";
+    odometerInput.value = "";
+    return;
+  }
+
+  let nextWeek = entries.findIndex((e) => !e) + 1;
+  if (nextWeek === 0) nextWeek = MAX_WEEKS;
+
+  weekInput.value = nextWeek;
+  setDateForWeek(nextWeek);
+  odometerInput.value = "";
+}
+
+form.addEventListener("submit", (e) => {
+  e.preventDefault();
+
+  const week = parseInt(weekInput.value);
+  const date = dateInput.value;
+  const odometer = parseInt(odometerInput.value);
+
+  if (!week || !date || !odometer) {
+    alert("Please fill in all fields.");
+    return;
+  }
+
+  if (week < 1 || week > MAX_WEEKS) {
+    alert(`Week must be between 1 and ${MAX_WEEKS}`);
+    return;
+  }
+
+  if (entries[week - 1]) {
+    if (!confirm(`Entry already exists for Week ${week}. Overwrite?`)) {
+      return;
     }
+  }
 
-    .container {
-      background: #fff;
-      max-width: 480px;
-      width: 100%;
-      padding: 3rem 2rem 4rem;
-      border-radius: 20px;
-      box-shadow: 0 6px 20px rgba(0,0,0,0.05);
-    }
+  entries[week - 1] = { week, date, odometer };
+  localStorage.setItem("leaseMiles", JSON.stringify(entries));
 
-    h1 {
-      font-weight: 300;
-      font-size: 2.5rem;
-      letter-spacing: 0.02em;
-      margin-bottom: 0.75rem;
-    }
+  alert(`Entry saved for Week ${week}.`);
+  resetInputs();
+  updateChart();
+});
 
-    p {
-      color: #64748b;
-      font-weight: 500;
-      margin-bottom: 2.5rem;
-      letter-spacing: 0.01em;
-    }
+resetBtn.addEventListener("click", () => {
+  if (confirm("Are you sure you want to reset all mileage data?")) {
+    entries = [];
+    localStorage.removeItem("leaseMiles");
+    updateChart();
+    resetInputs(true);
+  }
+});
 
-    label {
-      font-weight: 500;
-      font-size: 0.875rem;
-      color: #475569;
-      margin-bottom: 0.25rem;
-      display: block;
-    }
+function updateChart() {
+  const actual = [];
+  const min = [];
+  const max = [];
 
-    input[type="number"],
-    input[type="date"] {
-      width: 100%;
-      padding: 0.85rem 1.25rem;
-      font-size: 1rem;
-      border-radius: 9999px; /* pill shape */
-      border: 1px solid #cbd5e1;
-      background: #f9fafb;
-      transition: border-color 0.3s ease, box-shadow 0.3s ease;
-      outline-offset: 2px;
-      box-shadow: none;
-    }
+  for (let i = 0; i < MAX_WEEKS; i++) {
+    const cumulativeMin = Math.round(MIN_WEEKLY_MILES * (i + 1));
+    const cumulativeMax = Math.round(MAX_WEEKLY_MILES * (i + 1));
+    const actualMiles = entries[i]?.odometer ?? null;
 
-    input[type="number"]:focus,
-    input[type="date"]:focus {
-      border-color: #7dd3fc;
-      box-shadow: 0 0 6px 2px rgba(125,211,252,0.4);
-      background: #fff;
-    }
+    actual.push(actualMiles);
+    min.push(cumulativeMin);
+    max.push(cumulativeMax);
+  }
 
-    button {
-      margin-top: 1.5rem;
-      width: 100%;
-      padding: 1rem;
-      font-size: 1.1rem;
-      font-weight: 600;
-      border-radius: 9999px;
-      border: none;
-      cursor: pointer;
-      background: linear-gradient(90deg, #22d3ee 0%, #3b82f6 100%);
-      color: #fff;
-      box-shadow: 0 4px 14px rgba(34,211,238,0.5);
-      transition: background 0.3s ease;
-    }
+  const lastOdo = actual.filter((m) => m !== null).pop() || 0;
+  const expectedMinIndex = actual.findLastIndex((m) => m !== null);
+  const expectedMin = expectedMinIndex >= 0 ? min[expectedMinIndex] : 0;
+  const overMiles = Math.max(0, lastOdo - expectedMin);
+  const penalty = overMiles * PENALTY_RATE;
 
-    button:hover {
-      background: linear-gradient(90deg, #3b82f6 0%, #22d3ee 100%);
-    }
+  penaltyDisplay.textContent = `$${penalty.toFixed(2)}`;
+  progressBar.value = lastOdo;
+  progressValue.textContent = `${lastOdo} / ${LEASE_LIMIT.toLocaleString()} mi`;
 
-    .progress {
-      margin-top: 3rem;
-    }
+  renderChart(actual, min, max);
+}
 
-    progress {
-      width: 100%;
-      height: 1.75rem;
-      border-radius: 9999px;
-      overflow: hidden;
-      appearance: none;
-      background-color: #e2e8f0;
-    }
+function renderChart(actual, min, max) {
+  const ctx = document.getElementById("mileageChart").getContext("2d");
 
-    progress::-webkit-progress-bar {
-      background-color: #e2e8f0;
-      border-radius: 9999px;
-    }
+  if (mileageChart) mileageChart.destroy();
 
-    progress::-webkit-progress-value {
-      background: linear-gradient(90deg, #22d3ee 0%, #3b82f6 100%);
-      border-radius: 9999px;
-    }
+  mileageChart = new Chart(ctx, {
+    type: "line",
+    data: {
+      labels: Array.from({ length: MAX_WEEKS }, (_, i) => `Week ${i + 1}`),
+      datasets: [
+        {
+          label: "Actual Odometer",
+          data: actual,
+          borderColor: "#2563eb",
+          backgroundColor: "rgba(37, 99, 235, 0.2)",
+          fill: true,
+          tension: 0.3,
+          spanGaps: true,
+        },
+        {
+          label: "Cumulative Min",
+          data: min,
+          borderColor: "#10b981",
+          borderDash: [5, 5],
+          fill: false,
+        },
+        {
+          label: "Cumulative Max",
+          data: max,
+          borderColor: "#ef4444",
+          borderDash: [5, 5],
+          fill: false,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      interaction: {
+        mode: "nearest",
+        intersect: false,
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          title: {
+            display: true,
+            text: "Miles",
+          },
+        },
+        x: {
+          title: {
+            display: true,
+            text: "Week Number",
+          },
+          ticks: {
+            autoSkip: true,
+            maxTicksLimit: 12,
+          },
+        },
+      },
+      plugins: {
+        legend: {
+          labels: {
+            usePointStyle: true,
+            padding: 15,
+          },
+        },
+        tooltip: {
+          mode: "index",
+          intersect: false,
+        },
+      },
+    },
+  });
+}
 
-    canvas {
-      margin-top: 3rem;
-      max-width: 100%;
-      border-radius: 12px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.05);
-    }
-
-    #summary h3 {
-      margin-top: 2.5rem;
-      font-weight: 600;
-      color: #334155;
-      font-size: 1.25rem;
-      letter-spacing: 0.01em;
-      text-align: center;
-    }
-
-    #resetBtn {
-      margin-top: 1rem;
-      width: 100%;
-      padding: 1rem;
-      font-weight: 600;
-      font-size: 1.1rem;
-      border-radius: 9999px;
-      border: 1px solid #e2e8f0;
-      background: #f9fafb;
-      color: #64748b;
-      cursor: pointer;
-      transition: background 0.3s ease, color 0.3s ease;
-    }
-
-    #resetBtn:hover {
-      background: #e2e8f0;
-      color: #334155;
-    }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <h1>Lease Mileage Tracker</h1>
-    <p>Track your lease miles and avoid penalties</p>
-
-    <form id="mileageForm">
-      <label for="week">Week # (1 to 156):</label>
-      <input type="number" id="week" min="1" max="156" required />
-
-      <label for="date">Date:</label>
-      <input type="date" id="date" required />
-
-      <label for="odometer">Odometer Reading:</label>
-      <input type="number" id="odometer" required />
-
-      <button type="submit">Save Entry</button>
-    </form>
-
-    <button id="resetBtn">Reset All Data</button>
-
-    <div class="progress">
-      <label>Progress to 22,500 mi:</label>
-      <progress id="progressBar" value="0" max="22500"></progress>
-      <span id="progressValue">0 / 22,500 mi</span>
-    </div>
-
-    <canvas id="mileageChart" width="400" height="200"></canvas>
-
-    <div id="summary">
-      <h3>Projected Penalty: <span id="penalty">$0.00</span></h3>
-    </div>
-  </div>
-
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="script.js"></script>
-</body>
-</html>
+window.addEventListener("load", () => {
+  resetInputs();
+  updateChart();
+});
