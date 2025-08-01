@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Lease Mileage Tracker</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="container">
+    <h1>Lease Mileage Tracker</h1>
+    <p>Track your lease miles and avoid penalties</p>
+
+    <form id="mileageForm">
+      <label for="week">Week # (1 to 156):</label>
+      <input type="number" id="week" min="1" max="156" required />
+
+      <label for="date">Date:</label>
+      <input type="date" id="date" required />
+
+      <label for="odometer">Odometer Reading:</label>
+      <input type="number" id="odometer" required />
+
+      <button type="submit">Save Entry</button>
+    </form>
+
+    <button id="resetBtn">Reset All Data</button>
+
+    <div class="progress">
+      <label>Progress to 22,500 mi:</label>
+      <progress id="progressBar" value="0" max="22500"></progress>
+      <span id="progressValue">0 / 22,500 mi</span>
+    </div>
+
+    <canvas id="mileageChart" width="400" height="200"></canvas>
+
+    <div id="summary">
+      <h3>Projected Penalty: <span id="penalty">$0.00</span></h3>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    const form = document.getElementById("mileageForm");
+    const penaltyDisplay = document.getElementById("penalty");
+    const resetBtn = document.getElementById("resetBtn");
+    const progressBar = document.getElementById("progressBar");
+    const progressValue = document.getElementById("progressValue");
+
+    let entries = JSON.parse(localStorage.getItem("leaseMiles")) || [];
+
+    const minWeekly = 7500 / 156;
+    const maxWeekly = 10000 / 156;
+    const rate = 0.20;
+
+    form.addEventListener("submit", function (e) {
+      e.preventDefault();
+      const week = parseInt(document.getElementById("week").value);
+      const date = document.getElementById("date").value;
+      const odometer = parseInt(document.getElementById("odometer").value);
+
+      entries[week - 1] = { week, date, odometer };
+      localStorage.setItem("leaseMiles", JSON.stringify(entries));
+      updateChart();
+    });
+
+    resetBtn.addEventListener("click", () => {
+      if (confirm("Are you sure you want to reset all mileage data?")) {
+        localStorage.removeItem("leaseMiles");
+        entries = [];
+        updateChart();
+      }
+    });
+
+    function updateChart() {
+      const actual = [];
+      const min = [];
+      const max = [];
+
+      for (let i = 0; i < 156; i++) {
+        const cumulativeMin = Math.round(minWeekly * (i + 1));
+        const cumulativeMax = Math.round(maxWeekly * (i + 1));
+        const actualMiles = entries[i]?.odometer || null;
+
+        actual.push(actualMiles);
+        min.push(cumulativeMin);
+        max.push(cumulativeMax);
+      }
+
+      const lastOdo = actual.filter(m => m !== null).pop() || 0;
+      const expectedMin = min[actual.findLastIndex(m => m !== null)];
+      const overMiles = Math.max(0, lastOdo - expectedMin);
+      const penalty = overMiles * rate;
+      penaltyDisplay.textContent = `$${penalty.toFixed(2)}`;
+
+      progressBar.value = lastOdo;
+      progressValue.textContent = `${lastOdo} / 22,500 mi`;
+
+      renderChart(actual, min, max);
+    }
+
+    let mileageChart;
+    function renderChart(actual, min, max) {
+      const ctx = document.getElementById("mileageChart").getContext("2d");
+
+      if (mileageChart) mileageChart.destroy();
+
+      mileageChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: Array.from({ length: 156 }, (_, i) => `Week ${i + 1}`),
+          datasets: [
+            {
+              label: 'Actual Odometer',
+              data: actual,
+              borderColor: 'blue',
+              fill: false,
+              tension: 0.2
+            },
+            {
+              label: 'Cumulative Min',
+              data: min,
+              borderColor: 'green',
+              borderDash: [5, 5],
+              fill: false
+            },
+            {
+              label: 'Cumulative Max',
+              data: max,
+              borderColor: 'red',
+              borderDash: [5, 5],
+              fill: false
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            y: {
+              beginAtZero: true
+            }
+          }
+        }
+      });
+    }
+
+    // Auto-fill the next week number
+    window.addEventListener("load", () => {
+      const nextWeek = entries.findIndex(e => !e);
+      document.getElementById("week").value = nextWeek !== -1 ? nextWeek + 1 : 156;
+    });
+
+    updateChart();
+  </script>
+</body>
+</html>
