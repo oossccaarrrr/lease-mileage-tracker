@@ -8,12 +8,13 @@ const dateInput = document.getElementById("date");
 const odometerInput = document.getElementById("odometer");
 const entriesTableBody = document.querySelector("#entriesTable tbody");
 
-const LEASE_LIMIT = 22500;
+const LEASE_SAFE_LIMIT = 22500;
+const LEASE_MAX_LIMIT = 30000;
 const PENALTY_RATE = 0.20;
 const LEASE_START = new Date(2025, 6, 29);
 const MAX_WEEKS = 156;
-const MIN_WEEKLY_MILES = 7500 / 156;
-const MAX_WEEKLY_MILES = 10000 / 156;
+const MIN_WEEKLY_MILES = LEASE_SAFE_LIMIT / MAX_WEEKS;
+const MAX_WEEKLY_MILES = LEASE_MAX_LIMIT / MAX_WEEKS;
 
 let entries = JSON.parse(localStorage.getItem("leaseMiles")) || [];
 let mileageChart;
@@ -90,10 +91,8 @@ function updateChart() {
   entries.sort((a, b) => new Date(a.date) - new Date(b.date));
 
   for (let i = 0; i < MAX_WEEKS; i++) {
-    const cumulativeMin = Math.round(MIN_WEEKLY_MILES * (i + 1));
-    const cumulativeMax = Math.round(MAX_WEEKLY_MILES * (i + 1));
-    min.push(cumulativeMin);
-    max.push(cumulativeMax);
+    min.push(Math.round(MIN_WEEKLY_MILES * (i + 1)));
+    max.push(Math.round(MAX_WEEKLY_MILES * (i + 1)));
   }
 
   let lastOdo = 0;
@@ -125,12 +124,13 @@ function updateChart() {
   lastOdo = actualValues[actualValues.length - 1] || 0;
   const expectedMinIndex = actual.findLastIndex((m) => m !== null);
   const expectedMin = expectedMinIndex >= 0 ? min[expectedMinIndex] : 0;
-  const overMiles = Math.max(0, lastOdo - expectedMin);
+  const overMiles = Math.max(0, lastOdo - LEASE_SAFE_LIMIT);
   const penalty = overMiles * PENALTY_RATE;
 
   penaltyDisplay.textContent = `$${penalty.toFixed(2)}`;
+  progressBar.max = LEASE_MAX_LIMIT;
   progressBar.value = lastOdo;
-  progressValue.textContent = `${lastOdo} / ${LEASE_LIMIT.toLocaleString()} mi`;
+  progressValue.textContent = `${lastOdo.toLocaleString()} / ${LEASE_SAFE_LIMIT.toLocaleString()} mi safe zone`;
 
   renderChart(actual, min, max, averages);
 }
@@ -162,14 +162,14 @@ function renderChart(actual, min, max, averages) {
           borderDash: [3, 3],
         },
         {
-          label: "Cumulative Min",
+          label: "Cumulative Safe Max (22,500)",
           data: min,
           borderColor: "#10b981",
           borderDash: [5, 5],
           fill: false,
         },
         {
-          label: "Cumulative Max",
+          label: "Absolute Max (30,000)",
           data: max,
           borderColor: "#ef4444",
           borderDash: [5, 5],
