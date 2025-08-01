@@ -148,4 +148,15 @@ function deleteEntry(index) {
 function renderMonthlySummary() {
   const grouped = {};
   entries.forEach(e => {
-    const month = e.date.s
+    const month = e.date.slice(0, 7); // e.g., '2025-08'
+    if (!grouped[month]) grouped[month] = [];
+    grouped[month].push(e.odometer);
+  });
+
+  monthlySummary.innerHTML = "<h3>Monthly Mileage Summary</h3>";
+  for (const month in grouped) {
+    const miles = grouped[month];
+    const total = miles[miles.length - 1] - miles[0];
+    monthlySummary.innerHTML += `<div><strong>${month}:</strong> ${total.toLocaleString()} mi</div>`;
+  }
+}
