@@ -17,8 +17,8 @@
       margin: 0;
       padding: 3rem 1rem;
       display: flex;
-      justify-content: center;
-      align-items: flex-start;
+      flex-direction: column;
+      align-items: center;
       min-height: 100vh;
     }
 
@@ -146,11 +146,15 @@
       border-radius: 9999px;
     }
 
-    canvas {
-      margin-top: 3rem;
+    #chartWrapper {
+      width: 100vw;
       max-width: 100%;
-      border-radius: 12px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+      padding: 2rem 0;
+    }
+
+    #mileageChart {
+      width: 100% !important;
+      height: 350px !important;
     }
 
     #summary h3 {
@@ -203,8 +207,6 @@
       <span id="progressValue">0 / 22,500 mi</span>
     </div>
 
-    <canvas id="mileageChart" width="400" height="200"></canvas>
-
     <div id="summary">
       <h3>Projected Penalty: <span id="penalty">$0.00</span></h3>
     </div>
@@ -222,6 +224,10 @@
     </table>
 
     <div id="monthlySummary"></div>
+  </div>
+
+  <div id="chartWrapper">
+    <canvas id="mileageChart"></canvas>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
