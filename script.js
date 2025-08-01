@@ -181,7 +181,11 @@ function renderChart(actual, min, max, averages) {
       responsive: true,
       interaction: { mode: "nearest", intersect: false },
       scales: {
-        y: { beginAtZero: true, title: { display: true, text: "Miles" } },
+        y: {
+          beginAtZero: true,
+          title: { display: true, text: "Miles" },
+          suggestedMax: 40000
+        },
         x: {
           title: { display: true, text: "Week Number" },
           ticks: { autoSkip: true, maxTicksLimit: 12 },
