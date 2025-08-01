@@ -1,9 +1,13 @@
+// Full updated script.js with:
+// - Removed manual week input
+// - Auto-week calculation from date
+// - Editable entries via table click
+
 const form = document.getElementById("mileageForm");
 const penaltyDisplay = document.getElementById("penalty");
 const resetBtn = document.getElementById("resetBtn");
 const progressBar = document.getElementById("progressBar");
 const progressValue = document.getElementById("progressValue");
-const weekInput = document.getElementById("week");
 const dateInput = document.getElementById("date");
 const odometerInput = document.getElementById("odometer");
 const entriesTableBody = document.querySelector("#entriesTable tbody");
@@ -18,6 +22,7 @@ const MAX_WEEKLY_MILES = LEASE_MAX_LIMIT / MAX_WEEKS;
 
 let entries = JSON.parse(localStorage.getItem("leaseMiles")) || [];
 let mileageChart;
+let editingDate = null;
 
 function getWeekNumber(dateString) {
   const date = new Date(dateString);
@@ -30,40 +35,34 @@ function getMonthKey(dateString) {
   return `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
 }
 
-function setDateForWeek(weekNum) {
-  const msPerWeek = 7 * 24 * 60 * 60 * 1000;
-  const date = new Date(LEASE_START.getTime() + (weekNum - 1) * msPerWeek);
-  dateInput.value = date.toISOString().slice(0, 10);
-}
-
 function resetInputs(clearAll = false) {
   if (clearAll) {
-    weekInput.value = "";
     dateInput.value = "";
     odometerInput.value = "";
+    editingDate = null;
     return;
   }
   dateInput.value = new Date().toISOString().slice(0, 10);
-  weekInput.value = getWeekNumber(dateInput.value);
   odometerInput.value = "";
+  editingDate = null;
 }
 
 form.addEventListener("submit", (e) => {
   e.preventDefault();
-  const week = parseInt(weekInput.value);
   const date = dateInput.value;
   const odometer = parseInt(odometerInput.value);
+  const week = getWeekNumber(date);
 
-  if (!week || !date || !odometer) {
+  if (!date || !odometer) {
     alert("Please fill in all fields.");
     return;
   }
-  const existing = entries.find((e) => e && e.date === date);
-  if (existing && !confirm(`An entry already exists for this date. Overwrite?`)) return;
-  entries = entries.filter((e) => e?.date !== date);
+
+  entries = entries.filter((e) => e.date !== date);
   entries.push({ week, date, odometer });
   localStorage.setItem("leaseMiles", JSON.stringify(entries));
-  alert(`Entry saved for ${date}.`);
+  alert(`Entry ${editingDate ? 'updated' : 'saved'} for ${date}.`);
+
   resetInputs();
   updateChart();
   renderTable();
@@ -106,7 +105,7 @@ function updateChart() {
 
   for (let i = 0; i < MAX_WEEKS; i++) {
     if (weekOdometers[i + 1]) {
-      const sorted = weekOdometers[i + 1].sort((a, b) => new Date(a.date) - new Date(b.date));
+      const sorted = weekOdometers[i + 1].sort((a, b) => a - b);
       const start = sorted[0];
       const end = sorted[sorted.length - 1];
       actual[i] = end;
@@ -122,8 +121,6 @@ function updateChart() {
 
   const actualValues = actual.filter((m) => m !== null);
   lastOdo = actualValues[actualValues.length - 1] || 0;
-  const expectedMinIndex = actual.findLastIndex((m) => m !== null);
-  const expectedMin = expectedMinIndex >= 0 ? min[expectedMinIndex] : 0;
   const overMiles = Math.max(0, lastOdo - LEASE_SAFE_LIMIT);
   const penalty = overMiles * PENALTY_RATE;
 
@@ -210,6 +207,11 @@ function renderTable() {
       <td>${entry.odometer}</td>
       <td><button class="delete-btn" data-date="${entry.date}">🗑️</button></td>
     `;
+    tr.addEventListener("click", () => {
+      dateInput.value = entry.date;
+      odometerInput.value = entry.odometer;
+      editingDate = entry.date;
+    });
     entriesTableBody.appendChild(tr);
   });
 }
@@ -223,6 +225,7 @@ entriesTableBody.addEventListener("click", (e) => {
       updateChart();
       renderTable();
       renderMonthlySummary();
+      e.stopPropagation();
     }
   }
 });
