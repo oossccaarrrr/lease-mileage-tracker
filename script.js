@@ -1,263 +1,154 @@
-// Full updated script.js with:
-// - Removed manual week input
-// - Auto-week calculation from date
-// - Editable entries via table click
+// Firebase + Chart.js Lease Mileage Tracker
+let entries = \[];
+let chart;
+let userId = null;
+
+// Wait for auth
+firebase.auth().signInAnonymously()
+.then(() => {
+userId = firebase.auth().currentUser.uid;
+listenToChanges();
+})
+.catch(console.error);
+
+function listenToChanges() {
+firebase.database().ref("entries/" + userId).on("value", snapshot => {
+const data = snapshot.val();
+entries = data ? Object.values(data) : \[];
+entries.sort((a, b) => new Date(a.date) - new Date(b.date));
+updateUI();
+});
+}
+
+function saveToFirebase() {
+const updates = {};
+entries.forEach((entry, i) => {
+updates\[i] = entry;
+});
+firebase.database().ref("entries/" + userId).set(updates);
+}
 
 const form = document.getElementById("mileageForm");
-const penaltyDisplay = document.getElementById("penalty");
-const resetBtn = document.getElementById("resetBtn");
-const progressBar = document.getElementById("progressBar");
-const progressValue = document.getElementById("progressValue");
 const dateInput = document.getElementById("date");
 const odometerInput = document.getElementById("odometer");
-const entriesTableBody = document.querySelector("#entriesTable tbody");
+const progressBar = document.getElementById("progressBar");
+const progressValue = document.getElementById("progressValue");
+const penaltyEl = document.getElementById("penalty");
+const tableBody = document.querySelector("#entriesTable tbody");
+const monthlySummary = document.getElementById("monthlySummary");
 
-const LEASE_SAFE_LIMIT = 22500;
-const LEASE_MAX_LIMIT = 30000;
-const PENALTY_RATE = 0.20;
-const LEASE_START = new Date(2025, 6, 29);
-const MAX_WEEKS = 156;
-const MIN_WEEKLY_MILES = LEASE_SAFE_LIMIT / MAX_WEEKS;
-const MAX_WEEKLY_MILES = LEASE_MAX_LIMIT / MAX_WEEKS;
+form.addEventListener("submit", e => {
+e.preventDefault();
+const date = dateInput.value;
+const odometer = parseInt(odometerInput.value);
+if (!date || isNaN(odometer)) return;
 
-let entries = JSON.parse(localStorage.getItem("leaseMiles")) || [];
-let mileageChart;
-let editingDate = null;
+const existing = entries.find(e => e.date === date);
+if (existing) existing.odometer = odometer;
+else entries.push({ date, odometer });
 
-function getWeekNumber(dateString) {
-  const date = new Date(dateString);
-  const diff = date.getTime() - LEASE_START.getTime();
-  return Math.floor(diff / (7 * 24 * 60 * 60 * 1000)) + 1;
-}
-
-function getMonthKey(dateString) {
-  const date = new Date(dateString);
-  return `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
-}
-
-function resetInputs(clearAll = false) {
-  if (clearAll) {
-    dateInput.value = "";
-    odometerInput.value = "";
-    editingDate = null;
-    return;
-  }
-  dateInput.value = new Date().toISOString().slice(0, 10);
-  odometerInput.value = "";
-  editingDate = null;
-}
-
-form.addEventListener("submit", (e) => {
-  e.preventDefault();
-  const date = dateInput.value;
-  const odometer = parseInt(odometerInput.value);
-  const week = getWeekNumber(date);
-
-  if (!date || !odometer) {
-    alert("Please fill in all fields.");
-    return;
-  }
-
-  entries = entries.filter((e) => e.date !== date);
-  entries.push({ week, date, odometer });
-  localStorage.setItem("leaseMiles", JSON.stringify(entries));
-  alert(`Entry ${editingDate ? 'updated' : 'saved'} for ${date}.`);
-
-  resetInputs();
-  updateChart();
-  renderTable();
-  renderMonthlySummary();
+entries.sort((a, b) => new Date(a.date) - new Date(b.date));
+saveToFirebase();
+form.reset();
 });
 
-resetBtn.addEventListener("click", () => {
-  if (confirm("Are you sure you want to reset all mileage data?")) {
-    entries = [];
-    localStorage.removeItem("leaseMiles");
-    updateChart();
-    resetInputs(true);
-    renderTable();
-    renderMonthlySummary();
-  }
+document.getElementById("resetBtn").addEventListener("click", () => {
+if (confirm("Reset all data?")) {
+firebase.database().ref("entries/" + userId).remove();
+}
 });
 
-function updateChart() {
-  const actual = new Array(MAX_WEEKS).fill(null);
-  const min = [];
-  const max = [];
-  const averages = new Array(MAX_WEEKS).fill(null);
-  const weekTotals = new Array(MAX_WEEKS).fill(null);
-
-  entries.sort((a, b) => new Date(a.date) - new Date(b.date));
-
-  for (let i = 0; i < MAX_WEEKS; i++) {
-    min.push(Math.round(MIN_WEEKLY_MILES * (i + 1)));
-    max.push(Math.round(MAX_WEEKLY_MILES * (i + 1)));
-  }
-
-  let lastOdo = 0;
-  let weekOdometers = {};
-
-  entries.forEach((entry) => {
-    const wk = getWeekNumber(entry.date);
-    if (!weekOdometers[wk]) weekOdometers[wk] = [];
-    weekOdometers[wk].push(entry.odometer);
-  });
-
-  for (let i = 0; i < MAX_WEEKS; i++) {
-    if (weekOdometers[i + 1]) {
-      const sorted = weekOdometers[i + 1].sort((a, b) => a - b);
-      const start = sorted[0];
-      const end = sorted[sorted.length - 1];
-      actual[i] = end;
-      weekTotals[i] = end - start;
-    }
-  }
-
-  for (let i = 0; i < weekTotals.length; i++) {
-    if (weekTotals[i] != null) {
-      averages[i] = weekTotals[i];
-    }
-  }
-
-  const actualValues = actual.filter((m) => m !== null);
-  lastOdo = actualValues[actualValues.length - 1] || 0;
-  const overMiles = Math.max(0, lastOdo - LEASE_SAFE_LIMIT);
-  const penalty = overMiles * PENALTY_RATE;
-
-  penaltyDisplay.textContent = `$${penalty.toFixed(2)}`;
-  progressBar.max = LEASE_MAX_LIMIT;
-  progressBar.value = lastOdo;
-  progressValue.textContent = `${lastOdo.toLocaleString()} / ${LEASE_SAFE_LIMIT.toLocaleString()} mi safe zone`;
-
-  renderChart(actual, min, max, averages);
+function updateUI() {
+renderChart();
+updateProgress();
+updatePenalty();
+renderTable();
+renderMonthlySummary();
 }
 
-function renderChart(actual, min, max, averages) {
-  const ctx = document.getElementById("mileageChart").getContext("2d");
-  if (mileageChart) mileageChart.destroy();
-  mileageChart = new Chart(ctx, {
-    type: "line",
-    data: {
-      labels: Array.from({ length: MAX_WEEKS }, (_, i) => `Week ${i + 1}`),
-      datasets: [
-        {
-          label: "Actual Odometer",
-          data: actual,
-          borderColor: "#2563eb",
-          backgroundColor: "rgba(37, 99, 235, 0.2)",
-          fill: true,
-          tension: 0.3,
-          spanGaps: true,
-        },
-        {
-          label: "Weekly Average Miles",
-          data: averages,
-          borderColor: "#f59e0b",
-          backgroundColor: "transparent",
-          fill: false,
-          tension: 0.3,
-          borderDash: [3, 3],
-        },
-        {
-          label: "Cumulative Safe Max (22,500)",
-          data: min,
-          borderColor: "#10b981",
-          borderDash: [5, 5],
-          fill: false,
-        },
-        {
-          label: "Absolute Max (30,000)",
-          data: max,
-          borderColor: "#ef4444",
-          borderDash: [5, 5],
-          fill: false,
-        },
-      ],
-    },
-    options: {
-      responsive: true,
-      interaction: { mode: "nearest", intersect: false },
-      scales: {
-        y: {
-          beginAtZero: true,
-          title: { display: true, text: "Miles" },
-          suggestedMax: 40000
-        },
-        x: {
-          title: { display: true, text: "Week Number" },
-          ticks: { autoSkip: true, maxTicksLimit: 12 },
-        },
-      },
-      plugins: {
-        legend: { labels: { usePointStyle: true, padding: 15 } },
-        tooltip: { mode: "index", intersect: false },
-      },
-    },
-  });
+function renderChart() {
+const ctx = document.getElementById("mileageChart").getContext("2d");
+const labels = entries.map(e => e.date);
+const data = entries.map(e => e.odometer);
+
+if (chart) chart.destroy();
+chart = new Chart(ctx, {
+type: "line",
+data: {
+labels,
+datasets: \[{
+label: "Mileage",
+data,
+borderColor: "#3b82f6",
+backgroundColor: "#3b82f610",
+tension: 0.3,
+fill: true,
+pointRadius: 3,
+pointHoverRadius: 6
+}]
+},
+options: {
+responsive: true,
+maintainAspectRatio: false,
+scales: {
+y: {
+beginAtZero: true,
+max: 40000
+}
+}
+}
+});
+}
+
+function updateProgress() {
+if (!entries.length) return;
+const current = entries\[entries.length - 1].odometer;
+progressBar.value = current;
+progressValue.textContent = `${current.toLocaleString()} / 22,500 mi`;
+}
+
+function updatePenalty() {
+if (!entries.length) return;
+const over = entries\[entries.length - 1].odometer - 22500;
+const penalty = over > 0 ? over \* 0.2 : 0;
+penaltyEl.textContent = `$${penalty.toFixed(2)}`;
 }
 
 function renderTable() {
-  entriesTableBody.innerHTML = "";
-  entries.sort((a, b) => new Date(a.date) - new Date(b.date));
-  entries.forEach((entry) => {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${getWeekNumber(entry.date)}</td>
-      <td>${entry.date}</td>
-      <td>${entry.odometer}</td>
-      <td><button class="delete-btn" data-date="${entry.date}">🗑️</button></td>
+tableBody.innerHTML = "";
+entries.forEach((e, i) => {
+const row = tableBody.insertRow();
+const weekNum = Math.floor((new Date(e.date) - new Date("2025-07-29")) / (7 \* 24 \* 60 \* 60 \* 1000)) + 1;
+row\.innerHTML = `       <td>${weekNum}</td>       <td>${e.date}</td>       <td>${e.odometer}</td>       <td>         <button onclick="editEntry('${e.date}')">✏️</button>         <button onclick="deleteEntry(${i})">🗑️</button>       </td>
     `;
-    tr.addEventListener("click", () => {
-      dateInput.value = entry.date;
-      odometerInput.value = entry.odometer;
-      editingDate = entry.date;
-    });
-    entriesTableBody.appendChild(tr);
-  });
+});
 }
 
-entriesTableBody.addEventListener("click", (e) => {
-  if (e.target.classList.contains("delete-btn")) {
-    const date = e.target.getAttribute("data-date");
-    if (confirm(`Delete entry for ${date}?`)) {
-      entries = entries.filter((e) => e.date !== date);
-      localStorage.setItem("leaseMiles", JSON.stringify(entries));
-      updateChart();
-      renderTable();
-      renderMonthlySummary();
-      e.stopPropagation();
-    }
-  }
-});
+function editEntry(date) {
+const entry = entries.find(e => e.date === date);
+if (!entry) return;
+dateInput.value = entry.date;
+odometerInput.value = entry.odometer;
+}
+
+function deleteEntry(index) {
+if (confirm("Delete this entry?")) {
+entries.splice(index, 1);
+saveToFirebase();
+}
+}
 
 function renderMonthlySummary() {
-  const container = document.getElementById("monthlySummary") || document.createElement("div");
-  container.id = "monthlySummary";
-  container.innerHTML = "<h3>📅 Monthly Summaries</h3>";
-  const monthly = {};
-  const sorted = entries.slice().sort((a, b) => new Date(a.date) - new Date(b.date));
-  sorted.forEach((entry, i) => {
-    const key = getMonthKey(entry.date);
-    if (!monthly[key]) monthly[key] = [];
-    monthly[key].push(entry);
-  });
-
-  for (const key in monthly) {
-    const list = monthly[key].sort((a, b) => new Date(a.date) - new Date(b.date));
-    const start = list[0].odometer;
-    const end = list[list.length - 1].odometer;
-    const delta = end - start;
-    const div = document.createElement("div");
-    div.innerHTML = `<strong>${key}</strong>: ${delta} miles`;
-    container.appendChild(div);
-  }
-
-  document.querySelector(".container").appendChild(container);
-}
-
-window.addEventListener("load", () => {
-  resetInputs();
-  updateChart();
-  renderTable();
-  renderMonthlySummary();
+const grouped = {};
+entries.forEach(e => {
+const month = e.date.slice(0, 7);
+if (!grouped\[month]) grouped\[month] = \[];
+grouped\[month].push(e.odometer);
 });
+monthlySummary.innerHTML = "<h3>Monthly Mileage Summary</h3>";
+for (const month in grouped) {
+const miles = grouped\[month];
+const total = miles\[miles.length - 1] - miles\[0];
+monthlySummary.innerHTML += `<div><strong>${month}:</strong> ${total.toLocaleString()} mi</div>`;
+}
+}

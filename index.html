@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -10,178 +11,181 @@
       box-sizing: border-box;
     }
 
-    body {
-      font-family: 'Inter', sans-serif;
-      background: #f8fafc;
-      color: #334155;
-      margin: 0;
-      padding: 3rem 1rem;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      min-height: 100vh;
-    }
+```
+body {
+  font-family: 'Inter', sans-serif;
+  background: #f8fafc;
+  color: #334155;
+  margin: 0;
+  padding: 3rem 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+}
 
-    .container {
-      background: #fff;
-      max-width: 480px;
-      width: 100%;
-      padding: 3rem 2rem 4rem;
-      border-radius: 20px;
-      box-shadow: 0 6px 20px rgba(0,0,0,0.05);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      overflow: hidden;
-    }
+.container {
+  background: #fff;
+  max-width: 480px;
+  width: 100%;
+  padding: 3rem 2rem 4rem;
+  border-radius: 20px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.05);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  overflow: hidden;
+}
 
-    h1 {
-      font-weight: 300;
-      font-size: 2.5rem;
-      letter-spacing: 0.02em;
-      margin-bottom: 0.75rem;
-      text-align: center;
-    }
+h1 {
+  font-weight: 300;
+  font-size: 2.5rem;
+  letter-spacing: 0.02em;
+  margin-bottom: 0.75rem;
+  text-align: center;
+}
 
-    p {
-      color: #64748b;
-      font-weight: 500;
-      margin-bottom: 2.5rem;
-      letter-spacing: 0.01em;
-      text-align: center;
-    }
+p {
+  color: #64748b;
+  font-weight: 500;
+  margin-bottom: 2.5rem;
+  letter-spacing: 0.01em;
+  text-align: center;
+}
 
-    label {
-      font-weight: 500;
-      font-size: 0.875rem;
-      color: #475569;
-      margin-bottom: 0.25rem;
-      display: block;
-    }
+label {
+  font-weight: 500;
+  font-size: 0.875rem;
+  color: #475569;
+  margin-bottom: 0.25rem;
+  display: block;
+}
 
-    form {
-      width: 100%;
-    }
+form {
+  width: 100%;
+}
 
-    input[type="number"],
-    input[type="date"] {
-      width: 100%;
-      padding: 0.85rem 1.25rem;
-      font-size: 1rem;
-      border-radius: 9999px;
-      border: 1px solid #cbd5e1;
-      background: #f9fafb;
-      transition: border-color 0.3s ease, box-shadow 0.3s ease;
-      outline-offset: 2px;
-      box-shadow: none;
-      margin-bottom: 1rem;
-    }
+input[type="number"],
+input[type="date"] {
+  width: 100%;
+  padding: 0.85rem 1.25rem;
+  font-size: 1rem;
+  border-radius: 9999px;
+  border: 1px solid #cbd5e1;
+  background: #f9fafb;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  outline-offset: 2px;
+  box-shadow: none;
+  margin-bottom: 1rem;
+}
 
-    input[type="number"]:focus,
-    input[type="date"]:focus {
-      border-color: #7dd3fc;
-      box-shadow: 0 0 6px 2px rgba(125,211,252,0.4);
-      background: #fff;
-    }
+input[type="number"]:focus,
+input[type="date"]:focus {
+  border-color: #7dd3fc;
+  box-shadow: 0 0 6px 2px rgba(125,211,252,0.4);
+  background: #fff;
+}
 
-    button {
-      margin-top: 1.5rem;
-      width: 100%;
-      padding: 1rem;
-      font-size: 1.1rem;
-      font-weight: 600;
-      border-radius: 9999px;
-      border: none;
-      cursor: pointer;
-      background: linear-gradient(90deg, #22d3ee 0%, #3b82f6 100%);
-      color: #fff;
-      box-shadow: 0 4px 14px rgba(34,211,238,0.5);
-      transition: background 0.3s ease;
-    }
+button {
+  margin-top: 1.5rem;
+  width: 100%;
+  padding: 1rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  border-radius: 9999px;
+  border: none;
+  cursor: pointer;
+  background: linear-gradient(90deg, #22d3ee 0%, #3b82f6 100%);
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(34,211,238,0.5);
+  transition: background 0.3s ease;
+}
 
-    button:hover {
-      background: linear-gradient(90deg, #3b82f6 0%, #22d3ee 100%);
-    }
+button:hover {
+  background: linear-gradient(90deg, #3b82f6 0%, #22d3ee 100%);
+}
 
-    #resetBtn {
-      margin-top: 1rem;
-      width: 100%;
-      padding: 1rem;
-      font-weight: 600;
-      font-size: 1.1rem;
-      border-radius: 9999px;
-      border: 1px solid #e2e8f0;
-      background: #f9fafb;
-      color: #64748b;
-      cursor: pointer;
-      transition: background 0.3s ease, color 0.3s ease;
-    }
+#resetBtn {
+  margin-top: 1rem;
+  width: 100%;
+  padding: 1rem;
+  font-weight: 600;
+  font-size: 1.1rem;
+  border-radius: 9999px;
+  border: 1px solid #e2e8f0;
+  background: #f9fafb;
+  color: #64748b;
+  cursor: pointer;
+  transition: background 0.3s ease, color 0.3s ease;
+}
 
-    #resetBtn:hover {
-      background: #e2e8f0;
-      color: #334155;
-    }
+#resetBtn:hover {
+  background: #e2e8f0;
+  color: #334155;
+}
 
-    .progress {
-      margin-top: 3rem;
-      width: 100%;
-    }
+.progress {
+  margin-top: 3rem;
+  width: 100%;
+}
 
-    progress {
-      width: 100%;
-      height: 1.75rem;
-      border-radius: 9999px;
-      overflow: hidden;
-      appearance: none;
-      background-color: #e2e8f0;
-    }
+progress {
+  width: 100%;
+  height: 1.75rem;
+  border-radius: 9999px;
+  overflow: hidden;
+  appearance: none;
+  background-color: #e2e8f0;
+}
 
-    progress::-webkit-progress-bar {
-      background-color: #e2e8f0;
-      border-radius: 9999px;
-    }
+progress::-webkit-progress-bar {
+  background-color: #e2e8f0;
+  border-radius: 9999px;
+}
 
-    progress::-webkit-progress-value {
-      background: linear-gradient(90deg, #22d3ee 0%, #3b82f6 100%);
-      border-radius: 9999px;
-    }
+progress::-webkit-progress-value {
+  background: linear-gradient(90deg, #22d3ee 0%, #3b82f6 100%);
+  border-radius: 9999px;
+}
 
-    #chartWrapper {
-      width: 100vw;
-      max-width: 100%;
-      padding: 2rem 0;
-    }
+#chartWrapper {
+  width: 100vw;
+  max-width: 100%;
+  padding: 2rem 0;
+}
 
-    #mileageChart {
-      width: 100% !important;
-      height: 350px !important;
-    }
+#mileageChart {
+  width: 100% !important;
+  height: 350px !important;
+}
 
-    #summary h3 {
-      margin-top: 2.5rem;
-      font-weight: 600;
-      color: #334155;
-      font-size: 1.25rem;
-      letter-spacing: 0.01em;
-      text-align: center;
-    }
+#summary h3 {
+  margin-top: 2.5rem;
+  font-weight: 600;
+  color: #334155;
+  font-size: 1.25rem;
+  letter-spacing: 0.01em;
+  text-align: center;
+}
 
-    #monthlySummary {
-      width: 100%;
-      margin-top: 2rem;
-      background: #f1f5f9;
-      padding: 1rem;
-      border-radius: 12px;
-    }
+#monthlySummary {
+  width: 100%;
+  margin-top: 2rem;
+  background: #f1f5f9;
+  padding: 1rem;
+  border-radius: 12px;
+}
 
-    #monthlySummary div {
-      padding: 0.5rem 0;
-      border-bottom: 1px solid #e2e8f0;
-    }
+#monthlySummary div {
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #e2e8f0;
+}
 
-    #monthlySummary div:last-child {
-      border-bottom: none;
-    }
+#monthlySummary div:last-child {
+  border-bottom: none;
+}
+```
+
   </style>
 </head>
 <body>
@@ -189,48 +193,74 @@
     <h1>Lease Mileage Tracker</h1>
     <p>Track your lease miles and avoid penalties</p>
 
-    <form id="mileageForm">
-      <label for="date">Date:</label>
-      <input type="date" id="date" required />
+```
+<form id="mileageForm">
+  <label for="date">Date:</label>
+  <input type="date" id="date" required />
 
-      <label for="odometer">Odometer Reading:</label>
-      <input type="number" id="odometer" required />
+  <label for="odometer">Odometer Reading:</label>
+  <input type="number" id="odometer" required />
 
-      <button type="submit">Save Entry</button>
-    </form>
+  <button type="submit">Save Entry</button>
+</form>
 
-    <button id="resetBtn">Reset All Data</button>
+<button id="resetBtn">Reset All Data</button>
 
-    <div class="progress">
-      <label>Progress to 22,500 mi:</label>
-      <progress id="progressBar" value="0" max="22500"></progress>
-      <span id="progressValue">0 / 22,500 mi</span>
-    </div>
+<div class="progress">
+  <label>Progress to 22,500 mi:</label>
+  <progress id="progressBar" value="0" max="22500"></progress>
+  <span id="progressValue">0 / 22,500 mi</span>
+</div>
 
-    <div id="summary">
-      <h3>Projected Penalty: <span id="penalty">$0.00</span></h3>
-    </div>
+<div id="summary">
+  <h3>Projected Penalty: <span id="penalty">$0.00</span></h3>
+</div>
 
-    <table id="entriesTable" style="width:100%; margin-top:2rem; border-collapse:collapse;">
-      <thead>
-        <tr style="text-align:left;">
-          <th>Week #</th>
-          <th>Date</th>
-          <th>Odometer</th>
-          <th>Action</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
+<table id="entriesTable" style="width:100%; margin-top:2rem; border-collapse:collapse;">
+  <thead>
+    <tr style="text-align:left;">
+      <th>Week #</th>
+      <th>Date</th>
+      <th>Odometer</th>
+      <th>Action</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
 
-    <div id="monthlySummary"></div>
+<div id="monthlySummary"></div>
+```
+
   </div>
 
   <div id="chartWrapper">
     <canvas id="mileageChart"></canvas>
   </div>
 
+  <!-- Firebase Core + Realtime Database -->
+
+  <script src="https://www.gstatic.com/firebasejs/12.0.0/firebase-app-compat.js"></script>
+
+  <script src="https://www.gstatic.com/firebasejs/12.0.0/firebase-auth-compat.js"></script>
+
+  <script src="https://www.gstatic.com/firebasejs/12.0.0/firebase-database-compat.js"></script>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyCzq0f-TZjZZf5s9Tr-7-m0DozcrzJvEj8",
+      authDomain: "leasemileageapp.firebaseapp.com",
+      databaseURL: "https://leasemileageapp-default-rtdb.firebaseio.com",
+      projectId: "leasemileageapp",
+      storageBucket: "leasemileageapp.appspot.com",
+      messagingSenderId: "232437350981",
+      appId: "1:232437350981:web:668e93940200970dc0192c"
+    };
+    firebase.initializeApp(firebaseConfig);
+  </script>
+
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
   <script src="script.js"></script>
+
 </body>
 </html>
