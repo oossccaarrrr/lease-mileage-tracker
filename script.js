@@ -1,18 +1,12 @@
-// Firebase + Chart.js Lease Mileage Tracker
+// Firebase + Chart.js Lease Mileage Tracker (Shared UID: "oscar")
 let entries = [];
 let chart;
-let userId = null;
 
-// Wait for auth
-firebase.auth().signInAnonymously()
-  .then(() => {
-    userId = firebase.auth().currentUser.uid;
-    listenToChanges();
-  })
-  .catch(console.error);
+// Shared UID (so data syncs across all devices)
+const sharedUserPath = "entries/oscar";
 
 function listenToChanges() {
-  firebase.database().ref("entries/" + userId).on("value", snapshot => {
+  firebase.database().ref(sharedUserPath).on("value", snapshot => {
     const data = snapshot.val();
     entries = data ? Object.values(data) : [];
     entries.sort((a, b) => new Date(a.date) - new Date(b.date));
@@ -25,9 +19,10 @@ function saveToFirebase() {
   entries.forEach((entry, i) => {
     updates[i] = entry;
   });
-  firebase.database().ref("entries/" + userId).set(updates);
+  firebase.database().ref(sharedUserPath).set(updates);
 }
 
+// Elements
 const form = document.getElementById("mileageForm");
 const dateInput = document.getElementById("date");
 const odometerInput = document.getElementById("odometer");
@@ -37,6 +32,7 @@ const penaltyEl = document.getElementById("penalty");
 const tableBody = document.querySelector("#entriesTable tbody");
 const monthlySummary = document.getElementById("monthlySummary");
 
+// Form Submit
 form.addEventListener("submit", e => {
   e.preventDefault();
   const date = dateInput.value;
@@ -52,9 +48,10 @@ form.addEventListener("submit", e => {
   form.reset();
 });
 
+// Reset Button
 document.getElementById("resetBtn").addEventListener("click", () => {
   if (confirm("Reset all data?")) {
-    firebase.database().ref("entries/" + userId).remove();
+    firebase.database().ref(sharedUserPath).remove();
   }
 });
 
@@ -160,3 +157,6 @@ function renderMonthlySummary() {
     monthlySummary.innerHTML += `<div><strong>${month}:</strong> ${total.toLocaleString()} mi</div>`;
   }
 }
+
+// Start listening immediately
+listenToChanges();
