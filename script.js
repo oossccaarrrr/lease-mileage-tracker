@@ -2,8 +2,22 @@
 let entries = [];
 let chart;
 
-// Shared UID (so data syncs across all devices)
+// Shared UID path so data is synced across devices
 const sharedUserPath = "entries/oscar";
+
+// Initialize Firebase (already included via script tags in index.html)
+firebase.initializeApp({
+  apiKey: "AIzaSyCzq0f-TZjZZf5s9Tr-7-m0DozcrzJvEj8",
+  authDomain: "leasemileageapp.firebaseapp.com",
+  projectId: "leasemileageapp",
+  storageBucket: "leasemileageapp.appspot.com",
+  messagingSenderId: "232437350981",
+  appId: "1:232437350981:web:668e93940200970dc0192c",
+  databaseURL: "https://leasemileageapp-default-rtdb.firebaseio.com/"
+});
+
+firebase.auth().signInAnonymously().catch(console.error);
+firebase.auth().onAuthStateChanged(() => listenToChanges());
 
 function listenToChanges() {
   firebase.database().ref(sharedUserPath).on("value", snapshot => {
@@ -68,7 +82,6 @@ function renderChart() {
 
   if (!data.length) return;
 
-  // Calculate projection
   const firstDate = new Date(entries[0].date);
   const lastDate = new Date(entries[entries.length - 1].date);
   const totalDays = (lastDate - firstDate) / (1000 * 60 * 60 * 24);
@@ -85,10 +98,8 @@ function renderChart() {
     projectionData.push(projectedOdometer);
   }
 
-  // Ideal and max lines
-  const totalWeeks = 156;
-  const idealSlope = 22500 / totalWeeks;
-  const maxSlope = 30000 / totalWeeks;
+  const idealSlope = 22500 / 156;
+  const maxSlope = 30000 / 156;
   const idealLine = labels.map((_, i) => Math.round(i * idealSlope));
   const maxLine = labels.map(() => 30000);
 
@@ -215,6 +226,3 @@ function renderMonthlySummary() {
     monthlySummary.innerHTML += `<div><strong>${month}:</strong> ${total.toLocaleString()} mi</div>`;
   }
 }
-
-// Start listening immediately
-listenToChanges();
