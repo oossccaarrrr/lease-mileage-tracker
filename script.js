@@ -2,23 +2,10 @@
 let entries = [];
 let chart;
 
-// Shared UID path so data is synced across devices
+// Shared Firebase path (same for all devices)
 const sharedUserPath = "entries/oscar";
 
-// Initialize Firebase (already included via script tags in index.html)
-firebase.initializeApp({
-  apiKey: "AIzaSyCzq0f-TZjZZf5s9Tr-7-m0DozcrzJvEj8",
-  authDomain: "leasemileageapp.firebaseapp.com",
-  projectId: "leasemileageapp",
-  storageBucket: "leasemileageapp.appspot.com",
-  messagingSenderId: "232437350981",
-  appId: "1:232437350981:web:668e93940200970dc0192c",
-  databaseURL: "https://leasemileageapp-default-rtdb.firebaseio.com/"
-});
-
-firebase.auth().signInAnonymously().catch(console.error);
-firebase.auth().onAuthStateChanged(() => listenToChanges());
-
+// Real-time listener
 function listenToChanges() {
   firebase.database().ref(sharedUserPath).on("value", snapshot => {
     const data = snapshot.val();
@@ -28,6 +15,7 @@ function listenToChanges() {
   });
 }
 
+// Save current entries to Firebase
 function saveToFirebase() {
   const updates = {};
   entries.forEach((entry, i) => {
@@ -36,7 +24,7 @@ function saveToFirebase() {
   firebase.database().ref(sharedUserPath).set(updates);
 }
 
-// Elements
+// DOM elements
 const form = document.getElementById("mileageForm");
 const dateInput = document.getElementById("date");
 const odometerInput = document.getElementById("odometer");
@@ -46,6 +34,7 @@ const penaltyEl = document.getElementById("penalty");
 const tableBody = document.querySelector("#entriesTable tbody");
 const monthlySummary = document.getElementById("monthlySummary");
 
+// Form submit
 form.addEventListener("submit", e => {
   e.preventDefault();
   const date = dateInput.value;
@@ -53,20 +42,25 @@ form.addEventListener("submit", e => {
   if (!date || isNaN(odometer)) return;
 
   const existing = entries.find(e => e.date === date);
-  if (existing) existing.odometer = odometer;
-  else entries.push({ date, odometer });
+  if (existing) {
+    existing.odometer = odometer;
+  } else {
+    entries.push({ date, odometer });
+  }
 
   entries.sort((a, b) => new Date(a.date) - new Date(b.date));
   saveToFirebase();
   form.reset();
 });
 
+// Reset button
 document.getElementById("resetBtn").addEventListener("click", () => {
   if (confirm("Reset all data?")) {
     firebase.database().ref(sharedUserPath).remove();
   }
 });
 
+// UI update pipeline
 function updateUI() {
   renderChart();
   updateProgress();
@@ -75,13 +69,14 @@ function updateUI() {
   renderMonthlySummary();
 }
 
+// Chart rendering
 function renderChart() {
   const ctx = document.getElementById("mileageChart").getContext("2d");
   const labels = entries.map(e => e.date);
   const data = entries.map(e => e.odometer);
-
   if (!data.length) return;
 
+  // Projection line
   const firstDate = new Date(entries[0].date);
   const lastDate = new Date(entries[entries.length - 1].date);
   const totalDays = (lastDate - firstDate) / (1000 * 60 * 60 * 24);
@@ -91,14 +86,11 @@ function renderChart() {
   const remainingDays = (leaseEndDate - lastDate) / (1000 * 60 * 60 * 24);
   const projectedOdometer = Math.round(entries[entries.length - 1].odometer + dailyRate * remainingDays);
 
-  const projectionLabels = [...labels];
-  const projectionData = [...data];
-  if (dailyRate > 0) {
-    projectionLabels.push("Lease End");
-    projectionData.push(projectedOdometer);
-  }
+  const projectionLabels = [...labels, "Lease End"];
+  const projectionData = [...data, projectedOdometer];
 
-  const idealSlope = 22500 / 156;
+  // Ideal and max lines
+  const idealSlope = 22500 / 156; // ~3 years weekly
   const maxSlope = 30000 / 156;
   const idealLine = labels.map((_, i) => Math.round(i * idealSlope));
   const maxLine = labels.map(() => 30000);
@@ -158,6 +150,7 @@ function renderChart() {
   });
 }
 
+// Progress bar
 function updateProgress() {
   if (!entries.length) return;
   const current = entries[entries.length - 1].odometer;
@@ -165,6 +158,7 @@ function updateProgress() {
   progressValue.textContent = `${current.toLocaleString()} / 22,500 mi`;
 }
 
+// Penalty estimate
 function updatePenalty() {
   if (!entries.length) return;
   const firstDate = new Date(entries[0].date);
@@ -180,11 +174,12 @@ function updatePenalty() {
   penaltyEl.textContent = `$${penalty.toFixed(2)}`;
 }
 
+// Data table
 function renderTable() {
   tableBody.innerHTML = "";
   entries.forEach((e, i) => {
-    const row = tableBody.insertRow();
     const weekNum = Math.floor((new Date(e.date) - new Date("2025-07-29")) / (7 * 24 * 60 * 60 * 1000)) + 1;
+    const row = tableBody.insertRow();
     row.innerHTML = `
       <td>${weekNum}</td>
       <td>${e.date}</td>
@@ -197,6 +192,7 @@ function renderTable() {
   });
 }
 
+// Edit entry
 function editEntry(date) {
   const entry = entries.find(e => e.date === date);
   if (!entry) return;
@@ -204,6 +200,7 @@ function editEntry(date) {
   odometerInput.value = entry.odometer;
 }
 
+// Delete entry
 function deleteEntry(index) {
   if (confirm("Delete this entry?")) {
     entries.splice(index, 1);
@@ -211,10 +208,11 @@ function deleteEntry(index) {
   }
 }
 
+// Monthly mileage summary
 function renderMonthlySummary() {
   const grouped = {};
   entries.forEach(e => {
-    const month = e.date.slice(0, 7);
+    const month = e.date.slice(0, 7); // "YYYY-MM"
     if (!grouped[month]) grouped[month] = [];
     grouped[month].push(e.odometer);
   });
@@ -226,3 +224,6 @@ function renderMonthlySummary() {
     monthlySummary.innerHTML += `<div><strong>${month}:</strong> ${total.toLocaleString()} mi</div>`;
   }
 }
+
+// Start real-time sync
+listenToChanges();
