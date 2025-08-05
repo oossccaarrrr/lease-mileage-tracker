@@ -15,7 +15,6 @@
       display: flex;
       justify-content: center;
     }
-
     .container {
       max-width: 700px;
       width: 100%;
@@ -25,24 +24,20 @@
       border-radius: 20px;
       box-shadow: 0 6px 20px rgba(0,0,0,0.08);
     }
-
     h1 {
       font-size: 2rem;
       margin-bottom: 0.5rem;
     }
-
     p {
       margin-bottom: 2rem;
       color: #64748b;
     }
-
     label {
       font-weight: 500;
       font-size: 0.9rem;
       margin-top: 1rem;
       display: block;
     }
-
     input[type="date"],
     input[type="number"] {
       width: 100%;
@@ -54,7 +49,6 @@
       font-size: 1rem;
       box-sizing: border-box;
     }
-
     button {
       margin-top: 1.5rem;
       width: 100%;
@@ -68,11 +62,9 @@
       cursor: pointer;
       box-shadow: 0 4px 14px rgba(34,211,238,0.4);
     }
-
     button:hover {
       background: linear-gradient(to right, #3b82f6, #22d3ee);
     }
-
     #resetBtn {
       background: #f1f5f9;
       color: #334155;
@@ -80,11 +72,9 @@
       box-shadow: none;
       border: 1px solid #cbd5e1;
     }
-
     .progress {
       margin-top: 2rem;
     }
-
     progress {
       width: 100%;
       height: 1.25rem;
@@ -92,43 +82,35 @@
       overflow: hidden;
       appearance: none;
     }
-
     progress::-webkit-progress-bar {
       background-color: #e2e8f0;
     }
-
     progress::-webkit-progress-value {
       background: linear-gradient(to right, #22d3ee, #3b82f6);
     }
-
-    canvas {
+    #mileageChart {
       margin-top: 3rem;
       width: 100% !important;
-      height: 300px !important;
+      height: 400px !important;
     }
-
     table {
       width: 100%;
       margin-top: 2rem;
       border-collapse: collapse;
       font-size: 0.9rem;
     }
-
     th, td {
       padding: 0.5rem;
       border-bottom: 1px solid #e2e8f0;
       text-align: left;
     }
-
     th {
       background: #f8fafc;
     }
-
     #monthlySummary {
       margin-top: 2rem;
       font-size: 0.9rem;
     }
-
     #penalty {
       font-size: 1.25rem;
       color: #ef4444;
@@ -139,7 +121,6 @@
   <div class="container">
     <h1>Lease Mileage Tracker</h1>
     <p>Track your mileage and avoid costly lease overages</p>
-
     <form id="mileageForm">
       <label for="date">Date</label>
       <input type="date" id="date" required />
@@ -179,12 +160,10 @@
     <div id="monthlySummary"></div>
   </div>
 
-  <!-- Firebase UMD SDKs (NOT ES Modules) -->
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-
-  <!-- Firebase Config -->
+  <script src="https://www.gstatic.com/firebasejs/12.0.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/12.0.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/12.0.0/firebase-database-compat.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script>
     const firebaseConfig = {
       apiKey: "AIzaSyCzq0f-TZjZZf5s9Tr-7-m0DozcrzJvEj8",
@@ -198,11 +177,6 @@
     firebase.initializeApp(firebaseConfig);
     firebase.auth().signInAnonymously().catch(console.error);
   </script>
-
-  <!-- Chart.js -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-  <!-- App Script -->
   <script src="script.js"></script>
 </body>
 </html>
